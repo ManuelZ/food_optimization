@@ -22,7 +22,6 @@ def main():
         db_path=config.DB_PATH,
         custom_db_path=config.CUSTOM_DB_PATH,
         extra_info_path=config.EXTRA_INFO_PATH,
-        n_decision_vars_per_food=config.N_DECISION_VARS_PER_FOOD,
     )
 
     optim.create_data()
