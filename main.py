@@ -25,9 +25,9 @@ def main():
 
     data = optim.create_data()
     solver = pywraplp.Solver.CreateSolver(config.SOLVER_NAME)
-    status, solver, variables, decision_variables = optim.solve(solver, data)
+    status, solver = optim.solve(solver, data)
 
-    print_variables(solver, variables)
+    print_variables(solver, optim.variables)
     print_constraints(solver, optim.constraints)
 
     if status != solver.OPTIMAL:
@@ -43,9 +43,7 @@ def main():
                 key = keys.pop()
                 if key in optim.constraints:
                     del optim.constraints[key]
-                    status, solver, variables, decision_variables = optim.solve(
-                        solver, data
-                    )
+                    status, solver = optim.solve(solver, data)
                 if len(optim.constraints.keys()) == 0:
                     raise Exception("Unexpected error, go into the code.")
 
@@ -59,7 +57,7 @@ def main():
         print("\nOptimal solution found.")
         print(f"Objective value: {solver.Objective().Value():.2f}\n")
 
-        solution = optim.get_solution(variables)
+        solution = optim.get_solution()
         print_solution(solution, optim.constraints, data)
 
 
