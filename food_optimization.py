@@ -66,19 +66,17 @@ class FoodOptimization:
         df.fillna(0, inplace=True)
 
         columns_to_drop = ["Shrt_Desc", "NDB_No", "GmWt_Desc1", "GmWt_Desc2"]
-        data = {
+        self.data = {
             row["Shrt_Desc"]: row.drop(columns_to_drop).to_dict()
             for _, row in df.iterrows()
         }
 
-        return data
-
-    def create_variables(self, solver, data):
+    def create_variables(self, solver):
         """ """
 
         self.variables = {}
 
-        for food_name, food_data in data.items():
+        for food_name, food_data in self.data.items():
 
             # Create integer variables, used for pills
             if food_data["is_discrete"]:
@@ -86,14 +84,13 @@ class FoodOptimization:
 
             # Create float variables
             else:
-                min_val = data[food_name]["min_amount_gr"] / 100
-                max_val = data[food_name]["max_amount_gr"] / 100
+                min_val = self.data[food_name]["min_amount_gr"] / 100
+                max_val = self.data[food_name]["max_amount_gr"] / 100
                 self.variables[food_name] = solver.NumVar(min_val, max_val, food_name)
 
     def create_constraints(
         self,
         solver,
-        data: dict[str, FoodType],
     ):
         """ """
 
@@ -105,12 +102,12 @@ class FoodOptimization:
             # e.g. 2.50 gr of prot per 100 gr of potatoes * gr_potatoes
             #       ^                                             ^
             # nutrients_per_food_unit                         food_var
-            for food_name, food_nutrients in data.items():
+            for food_name, food_nutrients in self.data.items():
                 food_var = self.variables[food_name]  # units of food to use
                 nutrients_per_food_unit = food_nutrients[nutrient_name]
                 nutrient_constraint.SetCoefficient(food_var, nutrients_per_food_unit)
 
-    def create_objective(self, solver, data):
+    def create_objective(self, solver):
         """ """
 
         objective = solver.Objective()
@@ -119,17 +116,17 @@ class FoodOptimization:
         for food_name, food_var in self.variables.items():
 
             # Glycemic index
-            coefficient = data[food_name]["GL"]
+            coefficient = self.data[food_name]["GL"]
             objective.SetCoefficient(food_var, coefficient)
 
         return objective
 
-    def solve(self, solver, data: dict[str, FoodType]):
+    def solve(self, solver):
         """ """
 
-        self.create_variables(solver, data)
-        self.create_constraints(solver, data)
-        self.create_objective(solver, data)
+        self.create_variables(solver)
+        self.create_constraints(solver)
+        self.create_objective(solver)
 
         parameters = pywraplp.MPSolverParameters()
         status = solver.Solve(parameters)

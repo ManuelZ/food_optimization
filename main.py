@@ -22,9 +22,9 @@ def main():
         extra_info_path=config.EXTRA_INFO_PATH,
     )
 
-    data = optim.create_data()
+    optim.create_data()
     solver = pywraplp.Solver.CreateSolver(config.SOLVER_NAME)
-    status, solver = optim.solve(solver, data)
+    status, solver = optim.solve(solver)
 
     print_variables(solver, optim.variables)
     print_constraints(solver, optim.constraints)
@@ -42,7 +42,7 @@ def main():
                 key = keys.pop()
                 if key in optim.constraints:
                     del optim.constraints[key]
-                    status, solver = optim.solve(solver, data)
+                    status, solver = optim.solve(solver)
                 if len(optim.constraints.keys()) == 0:
                     raise Exception("Unexpected error, go into the code.")
 
@@ -57,7 +57,7 @@ def main():
         print(f"Objective value: {solver.Objective().Value():.2f}\n")
 
         solution = optim.get_solution()
-        print_solution(solution, optim.constraints, data)
+        print_solution(solution, optim.constraints, optim.data)
 
 
 if __name__ == "__main__":
