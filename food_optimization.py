@@ -102,7 +102,6 @@ def create_data() -> dict[str, FoodType]:
 def create_variables(solver, data):
     """ """
 
-    decision_variables = defaultdict(dict)
     variables = {}
 
     for food_name, food_data in data.items():
@@ -117,12 +116,7 @@ def create_variables(solver, data):
             max_val = data[food_name]["max_amount_gr"] / 100
             variables[food_name] = solver.NumVar(min_val, max_val, food_name)
 
-        # Create binary decision variables, https://or.stackexchange.com/a/7553
-        for g in range(config.N_DECISION_VARS_PER_FOOD):
-            var_name = f"{food_name}_group_{g}"
-            decision_variables[food_name][g] = solver.IntVar(0, 1, var_name)
-
-    return variables, decision_variables
+    return variables
 
 
 def create_constraints(solver, variables, data: dict[str, FoodType], nutrients):
@@ -159,14 +153,14 @@ def create_objective(solver, variables, data):
 def solve(solver, data: dict[str, FoodType], nutrients):
     """ """
 
-    variables, decision_variables = create_variables(solver, data)
+    variables = create_variables(solver, data)
     create_constraints(solver, variables, data, nutrients)
     create_objective(solver, variables, data)
 
     parameters = pywraplp.MPSolverParameters()
     status = solver.Solve(parameters)
 
-    return status, solver, variables, decision_variables
+    return status, solver, variables
 
 
 def get_solution(variables):
@@ -187,7 +181,7 @@ def main():
 
     data = create_data()
     solver = pywraplp.Solver.CreateSolver(config.SOLVER_NAME)
-    status, solver, variables, decision_variables = solve(solver, data, CONSTRAINTS)
+    status, solver, variables = solve(solver, data, CONSTRAINTS)
 
     print_variables(solver, variables)
     print_constraints(solver, CONSTRAINTS)
@@ -205,9 +199,7 @@ def main():
                 key = keys.pop()
                 if key in CONSTRAINTS:
                     del CONSTRAINTS[key]
-                    status, solver, variables, decision_variables = solve(
-                        solver, data, CONSTRAINTS
-                    )
+                    status, solver, variables = solve(solver, data, CONSTRAINTS)
                 if len(CONSTRAINTS.keys()) == 0:
                     raise Exception("Unexpected error, go into the code.")
 
