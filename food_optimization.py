@@ -32,9 +32,7 @@ class FoodOptimization:
         self.custom_db_path = custom_db_path
         self.extra_info_path = extra_info_path
 
-    def create_data(
-        self,
-    ) -> dict[str, FoodType]:
+    def create_data(self):
         """ """
 
         # Load food tables
