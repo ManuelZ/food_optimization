@@ -1,21 +1,24 @@
+# My customized or-tools solution for the Stigler diet problem.
 
-# My customization of the or-tools solution to the Stigler diet problem
-
-Linear optimization problem to find a subset of foods subjected to desired values of proteins, fats, carbohydrates and micronutrients. The objective is the minimization of the glycemic index of the selected foods.
+Linear optimization problem to find a subset of foods that meet desired ranges for calories, proteins, fats, carbohydrates, and micronutrients, while minimizing the glycemic index.
 
 ## Usage
+
 To run the script:
 
 ```
-python food_optimization.py
+python main.py
 ```
+
 ## Requirements
+
 Depends on or-tools and Pandas.
 
 ## Output:
+
 ```
-Number of variables: 245
-Variables (one unit represents 100 gr of food):
+Number of variables: 49
+Variables:
 
   - Cheese,cottage,lowfat,1% milkfat
   - Egg,whl,ckd,hard-boiled
@@ -67,7 +70,7 @@ Variables (one unit represents 100 gr of food):
   - Vitamin d (1 pill)
   - Isopure protein powder, zero carb, creamy vanilla
 
-Number of constraints = 79
+Number of constraints = 30
 Constraints:
 
   3000 < Energ_Kcal      <   3100
@@ -104,26 +107,28 @@ Constraints:
 Optimal solution found.
 Objective value: 170.41
 
-     350 gr of QUINOA,CKD
-     300 gr of TANGERINES,(MANDARIN ORANGES),RAW
-     263 gr of PRICKLY PEARS,RAW
-     214 gr of BANANAS,RAW
-     214 gr of PASTA,CKD,ENR,W/ ADDED SALT
-     150 gr of CHICKPEAS ,MATURE SEEDS,CKD,BLD,WO/SALT
-     150 gr of PEAS,SPLIT,MATURE SEEDS,CKD,BLD,WO/SALT
-     120 gr of ONIONS,RAW
-     100 gr of TUNA,LT,CND IN OIL,DRND SOL
-     1 unit of Sunvit Calcium Citrate (1 tablet)
-     1 unit of Vitamin E (1 pill)
-     1 unit of Vitamin C (1/4 pill)
-     1 unit of Vitamin D (1 pill)
-      80 gr of CEREALS,OATS,REG & QUICK,NOT FORT,DRY
-      44 gr of LENTILS,MATURE SEEDS,CKD,BLD,WO/SALT
-      44 gr of PEANUTS,ALL TYPES,DRY-ROASTED,W/SALT
-      41 gr of Optimum Nutrition, Gold Standard, 100% Whey, Cookies & Cream
-      39 gr of CARROTS,RAW
-      27 gr of CASHEW NUTS,DRY RSTD,WO/SALT
-      20 gr of ALMONDS,DRY RSTD,W/SALT
-      15 gr of Maca Gelatinizada
-       9 gr of SPINACH,CKD,BLD,DRND,W/SALT
+  350 gr of QUINOA,CKD
+  300 gr of TANGERINES,(MANDARIN ORANGES),RAW
+  263 gr of PRICKLY PEARS,RAW
+  214 gr of BANANAS,RAW
+  214 gr of PASTA,CKD,ENR,W/ ADDED SALT
+  150 gr of CHICKPEAS ,MATURE SEEDS,CKD,BLD,WO/SALT
+  150 gr of PEAS,SPLIT,MATURE SEEDS,CKD,BLD,WO/SALT
+  120 gr of ONIONS,RAW
+  100 gr of TUNA,LT,CND IN OIL,DRND SOL
+    1 unit of Sunvit Calcium Citrate (1 tablet)
+    1 unit of Vitamin E (1 pill)
+    1 unit of Vitamin C (1/4 pill)
+    1 unit of Vitamin D (1 pill)
+   80 gr of CEREALS,OATS,REG & QUICK,NOT FORT,DRY
+   44 gr of LENTILS,MATURE SEEDS,CKD,BLD,WO/SALT
+   44 gr of PEANUTS,ALL TYPES,DRY-ROASTED,W/SALT
+   41 gr of Optimum Nutrition, Gold Standard, 100% Whey, Cookies & Cream
+   39 gr of CARROTS,RAW
+   27 gr of CASHEW NUTS,DRY RSTD,WO/SALT
+   20 gr of ALMONDS,DRY RSTD,W/SALT
+   15 gr of Maca Gelatinizada
+    9 gr of SPINACH,CKD,BLD,DRND,W/SALT
+    2 gr of Isopure Protein Powder, Zero Carb, Creamy Vanilla
+    1 gr of Salt
 ```
