@@ -56,9 +56,7 @@ CONSTRAINTS = {
 
 
 def create_data() -> dict[str, FoodType]:
-    """
-    Each column generally represents the grams per 100 grams of such food
-    """
+    """ """
 
     # Load food tables
     df = pd.read_csv(config.DB_PATH, dtype={"NDB_No": str})
