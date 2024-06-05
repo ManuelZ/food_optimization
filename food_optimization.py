@@ -24,13 +24,11 @@ class FoodOptimization:
         db_path,
         custom_db_path,
         extra_info_path,
-        n_decision_vars_per_food,
     ):
         self.constraints = copy(constraints)
         self.db_path = db_path
         self.custom_db_path = custom_db_path
         self.extra_info_path = extra_info_path
-        self.n_decision_vars_per_food = n_decision_vars_per_food
 
     def create_data(
         self,

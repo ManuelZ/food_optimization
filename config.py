@@ -9,7 +9,6 @@ class Config:
     CUSTOM_DB_PATH: str = "data/custom_foods.csv"
     EXTRA_INFO_PATH: str = "data/extra_info.csv"
     SOLVER_NAME: str = "SCIP_MIXED_INTEGER_PROGRAMMING"  # 'GLOP'
-    N_DECISION_VARS_PER_FOOD: int = 4
 
 
 CONSTRAINTS = {
