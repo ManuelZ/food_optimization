@@ -7,13 +7,17 @@ https://en.wikipedia.org/wiki/Stigler_diet.
 from ortools.linear_solver import pywraplp
 import pandas as pd
 from collections import defaultdict
+from utils import print_variables, print_constraints
+from utils import print_solution
 
 DB_PATH = "ABBREV.csv"
 CUSTOM_DB_PATH = "custom_foods.csv"
 EXTRA_INFO_PATH = "extra_info.csv"
 INFINITY = 999999
-
-nutrients = {
+SOLVER_NAME = "SCIP_MIXED_INTEGER_PROGRAMMING"  # 'GLOP'
+N_DECISION_VARS_PER_FOOD = 4
+FoodType = dict[str, float]
+CONSTRAINTS = {
     # Macro-nutrients
     "Energ_Kcal": [3000, 3100],
     "Protein_(g)": [152, 160],
@@ -54,20 +58,24 @@ nutrients = {
 }
 
 
-def create_data():
-    """ """
+def create_data() -> dict[str, FoodType]:
+    """
+    Each column generally represents the grams per 100 grams of such food
+    """
 
+    # Load food tables
     df = pd.read_csv(DB_PATH, dtype={"NDB_No": str})
     df_custom = pd.read_csv(CUSTOM_DB_PATH, dtype={"NDB_No": str})
     extra_info_df = pd.read_csv(EXTRA_INFO_PATH, dtype={"NDB_No": str})
 
-    # Filter raw data
+    # Filter data of interest from main table
     rows_of_interest = extra_info_df["NDB_No"].to_list()
     df = df[df["NDB_No"].isin(rows_of_interest)]
 
+    # Concatenate main table with custom table
     df = pd.concat([df, df_custom], axis=0)
 
-    # Calculate "available_carbohydrate" column
+    # Calculate available carbohydrates
     df["available_carbs_(g)"] = df["Carbohydrt_(g)"] - df["Fiber_TD_(g)"]
 
     # Add Glycemic Index data
@@ -85,73 +93,63 @@ def create_data():
 
     df.fillna(0, inplace=True)
 
+    columns_to_drop = ["Shrt_Desc", "NDB_No", "GmWt_Desc1", "GmWt_Desc2"]
     data = {
-        row["Shrt_Desc"]: row.drop("Shrt_Desc").to_dict() for _, row in df.iterrows()
+        row["Shrt_Desc"]: row.drop(columns_to_drop).to_dict()
+        for _, row in df.iterrows()
     }
 
     return data
 
 
-def create_variables(solver, data, log=True):
+def create_variables(solver, data):
     """ """
 
-    # Create binary decision variables, https://or.stackexchange.com/a/7553
     decision_variables = defaultdict(dict)
-
     variables = {}
+
     for food_name, food_data in data.items():
 
-        # Set Integer variables
+        # Create integer variables, used for pills
         if food_data["is_discrete"]:
-            variables[food_name] = solver.IntVar(0.0, 1, food_name)
+            variables[food_name] = solver.IntVar(0, 1, food_name)
 
-        # Set float variables
+        # Create float variables
         else:
             min_val = data[food_name]["min_amount_gr"] / 100
             max_val = data[food_name]["max_amount_gr"] / 100
             variables[food_name] = solver.NumVar(min_val, max_val, food_name)
 
         # Create binary decision variables, https://or.stackexchange.com/a/7553
-        GROUPS = range(4)
-        for group in GROUPS:
-            var_name = f"{food_name}_g_{group}"
-            decision_variables[food_name][group] = solver.IntVar(0, 1, var_name)
-
-    if log:
-        print("Number of variables:", solver.NumVariables())
-        print("Variables (one unit represents 100 gr of food):\n")
-        for v in variables.keys():
-            print(f"  - {v.capitalize()}")
-        print()
+        for g in range(N_DECISION_VARS_PER_FOOD):
+            var_name = f"{food_name}_group_{g}"
+            decision_variables[food_name][g] = solver.IntVar(0, 1, var_name)
 
     return variables, decision_variables
 
 
-def set_constraints(solver, variables, data, nutrients, log=True):
+def create_constraints(solver, variables, data: dict[str, FoodType], nutrients):
     """ """
 
-    for nutrient_name, (nutrient_min, nutrient_max) in nutrients.items():
+    for nutrient_name, (min_val, max_val) in nutrients.items():
 
-        nutrient_constraint = solver.Constraint(nutrient_min, nutrient_max)
+        nutrient_constraint = solver.Constraint(min_val, max_val)
 
-        for item_name, item_nutrients in data.items():
-            nutrients_in_one_food = item_nutrients[nutrient_name]
-            food_var_qty = variables[item_name]
-            # In this loop, the constraint will receive a new variable and coefficient
-            # e.g. 0.83 [gr prot per 100 gr papa] * num_100_gr_papas
-            nutrient_constraint.SetCoefficient(food_var_qty, nutrients_in_one_food)
-
-    if log:
-        print("Number of constraints =", solver.NumConstraints())
-        print("Constraints: \n")
-        for constraint_name, (min_nut, max_nut) in nutrients.items():
-            print(f"  {min_nut:4} < {constraint_name:<15} < {max_nut:6}")
+        # Set the coefficient of the variable on the constraint.
+        # e.g. 2.50 gr of prot per 100 gr of potatoes * gr_potatoes
+        #       ^                                             ^
+        # nutrients_per_food_unit                         food_var
+        for food_name, food_nutrients in data.items():
+            food_var = variables[food_name]  # units of food to use
+            nutrients_per_food_unit = food_nutrients[nutrient_name]
+            nutrient_constraint.SetCoefficient(food_var, nutrients_per_food_unit)
 
 
 def create_objective(solver, variables, data):
     """ """
 
     objective = solver.Objective()
+    objective.SetMinimization()
 
     for food_name, food_var in variables.items():
         # Glycemic index
@@ -161,23 +159,12 @@ def create_objective(solver, variables, data):
     return objective
 
 
-def solve(data, nutrients, log=True):
+def solve(solver, data: dict[str, FoodType], nutrients):
     """ """
 
-    if not solver:
-        return
-
-    # Create binary decision variables, https://or.stackexchange.com/a/7553
-    variables, decision_variables = create_variables(solver, data, log)
-    for food_name, food_group_variables in decision_variables.items():
-        group_constraint = solver.Constraint(0, 1)
-        for group, group_var in food_group_variables.items():
-            group_constraint.SetCoefficient(group_var, 1)
-
-    set_constraints(solver, variables, data, nutrients, log)
-
-    objective = create_objective(solver, variables, data)
-    objective.SetMinimization()
+    variables, decision_variables = create_variables(solver, data)
+    create_constraints(solver, variables, data, nutrients)
+    create_objective(solver, variables, data)
 
     parameters = pywraplp.MPSolverParameters()
     status = solver.Solve(parameters)
@@ -185,28 +172,51 @@ def solve(data, nutrients, log=True):
     return status, solver, variables, decision_variables
 
 
+def get_solution(variables):
+
+    solution = []
+    for food_name, food_var in variables.items():
+        food_var_value = food_var.solution_value()
+        if food_var_value > 0:
+            solution.append((food_name, food_var.solution_value()))
+
+    solution.sort(key=lambda x: x[1], reverse=True)
+
+    return solution
+
+
 def main():
+    """ """
 
     data = create_data()
-    status, solver, variables, decision_variables = solve(data, nutrients)
+    solver = pywraplp.Solver.CreateSolver(SOLVER_NAME)
+    status, solver, variables, decision_variables = solve(solver, data, CONSTRAINTS)
+
+    print_variables(solver, variables)
+    print_constraints(solver, CONSTRAINTS)
 
     if status != solver.OPTIMAL:
         print("The problem does not have an optimal solution!")
         if status == solver.FEASIBLE:
-            print("A potentially suboptimal solution was found.")
+            print("A feasible solution was found.")
         else:
             print("The solver could not solve the problem.")
-            print("Trying to identify the problematic restriction")
-            keys = list(nutrients.keys())
+            print("Trying to identify the problematic restriction...")
+
+            keys = list(CONSTRAINTS.keys())
             while status != solver.OPTIMAL:
                 key = keys.pop()
-                if key in nutrients:
-                    del nutrients[key]
-                    status, solver, variables = solve(data, nutrients, log=False)
-                if len(nutrients.keys()) == 0:
-                    print("CHECK THIS ERROR")
-                    exit(1)
-            print("SOLUTION FOUND after removing constraint ", key)
+                if key in CONSTRAINTS:
+                    del CONSTRAINTS[key]
+                    status, solver, variables, decision_variables = solve(
+                        solver, data, CONSTRAINTS
+                    )
+                if len(CONSTRAINTS.keys()) == 0:
+                    raise Exception("Unexpected error, go into the code.")
+
+            print(
+                "Optimal solution found after removing constraint '{CONSTRAINTS[key][0]} < {key} < {CONSTRAINTS[key][1]}'"
+            )
             exit(0)
 
     elif status == pywraplp.Solver.OPTIMAL:
@@ -214,33 +224,8 @@ def main():
         print("\nOptimal solution found.")
         print(f"Objective value: {solver.Objective().Value():.2f}\n")
 
-        totals = defaultdict(int)
-
-        sorted_solution = [
-            (food_name, food_var.solution_value())
-            for food_name, food_var in variables.items()
-        ]
-        sorted_solution.sort(key=lambda x: x[1], reverse=True)
-
-        for food_name, food_amount in sorted_solution:
-            if food_amount > 0:
-
-                for k in nutrients:
-                    totals[k] += food_amount * data[food_name][k]
-
-                # Print variables
-                if data[food_name]["is_discrete"]:
-                    print(f"{food_amount:>6.0f} unit of {food_name:<40}")
-                else:
-                    if food_amount * 100 < 5:
-                        continue
-                    print(f"{food_amount*100:8.0f} gr of {food_name:<40}")
-
-        selected_foods = [
-            (food_name, food_var.solution_value())
-            for food_name, food_var in variables.items()
-            if food_var.solution_value() > 0
-        ]
+        solution = get_solution(variables)
+        print_solution(solution, CONSTRAINTS, data)
 
 
 if __name__ == "__main__":
