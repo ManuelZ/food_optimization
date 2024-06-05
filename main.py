@@ -15,16 +15,18 @@ config = Config()
 def main():
     """ """
 
+    solver = pywraplp.Solver.CreateSolver(config.SOLVER_NAME)
     optim = FoodOptimization(
+        solver,
         constraints=CONSTRAINTS,
         db_path=config.DB_PATH,
         custom_db_path=config.CUSTOM_DB_PATH,
         extra_info_path=config.EXTRA_INFO_PATH,
+        n_decision_vars_per_food=config.N_DECISION_VARS_PER_FOOD,
     )
 
     optim.create_data()
-    solver = pywraplp.Solver.CreateSolver(config.SOLVER_NAME)
-    status, solver = optim.solve(solver)
+    status = optim.solve()
 
     print_variables(solver, optim.variables)
     print_constraints(solver, optim.constraints)
@@ -42,7 +44,7 @@ def main():
                 key = keys.pop()
                 if key in optim.constraints:
                     del optim.constraints[key]
-                    status, solver = optim.solve(solver)
+                    status = optim.solve()
                 if len(optim.constraints.keys()) == 0:
                     raise Exception("Unexpected error, go into the code.")
 
