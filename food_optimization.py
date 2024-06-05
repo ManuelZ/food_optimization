@@ -4,13 +4,22 @@ A description of the problem can be found here:
 https://en.wikipedia.org/wiki/Stigler_diet.
 """
 
+# Standard Library imports
+from collections import defaultdict
+
+# External imports
 from ortools.linear_solver import pywraplp
 import pandas as pd
-from collections import defaultdict
+
+# Local imports
 from utils import print_variables, print_constraints
 from utils import print_solution
 from config import Config
 from config import CONSTRAINTS
+
+
+FoodType = dict[str, float]
+
 
 config = Config()
 
