@@ -9,13 +9,10 @@ import pandas as pd
 from collections import defaultdict
 from utils import print_variables, print_constraints
 from utils import print_solution
+from config import Config
 
-DB_PATH = "ABBREV.csv"
-CUSTOM_DB_PATH = "custom_foods.csv"
-EXTRA_INFO_PATH = "extra_info.csv"
-INFINITY = 999999
-SOLVER_NAME = "SCIP_MIXED_INTEGER_PROGRAMMING"  # 'GLOP'
-N_DECISION_VARS_PER_FOOD = 4
+config = Config()
+
 FoodType = dict[str, float]
 CONSTRAINTS = {
     # Macro-nutrients
@@ -24,12 +21,12 @@ CONSTRAINTS = {
     "available_carbs_(g)": [358, 400],  # Custom: total carbs minus fiber
     "Lipid_Tot_(g)": [76, 86],
     # Vitamins
-    "Thiamin_(mg)": [1.2, INFINITY],  # vit B1
-    "Riboflavin_(mg)": [1.3, INFINITY],  # vit B2
+    "Thiamin_(mg)": [1.2, config.INFINITY],  # vit B1
+    "Riboflavin_(mg)": [1.3, config.INFINITY],  # vit B2
     "Niacin_(mg)": [16, 35],  # vit B3
-    "Panto_Acid_mg)": [5, INFINITY],  # vit B5
+    "Panto_Acid_mg)": [5, config.INFINITY],  # vit B5
     "Vit_B6_(mg)": [1.3, 100],  # vit b6
-    "Vit_B12_(µg)": [2.4, INFINITY],
+    "Vit_B12_(µg)": [2.4, config.INFINITY],
     "Folate_Tot_(µg)": [400, 1000],
     "Vit_A_IU": [
         3000,
@@ -38,15 +35,15 @@ CONSTRAINTS = {
     "Vit_C_(mg)": [90, 2000],
     "Vit_D_IU": [600, 4000],
     "Vit_E_(mg)": [15, 1000],
-    "Vit_K_(µg)": [120, INFINITY],
+    "Vit_K_(µg)": [120, config.INFINITY],
     # Minerals
     "Calcium_(mg)": [1000, 2500],
     "Copper_mg)": [0.9, 10],
     "Iron_(mg)": [8, 45],
-    "Magnesium_(mg)": [420, INFINITY],
+    "Magnesium_(mg)": [420, config.INFINITY],
     "Manganese_(mg)": [2.3, 11],
     "Phosphorus_(mg)": [700, 4000],
-    "Potassium_(mg)": [3400, INFINITY],
+    "Potassium_(mg)": [3400, config.INFINITY],
     "Selenium_(µg)": [55, 400],
     "Sodium_(mg)": [1500, 2300],
     "Zinc_(mg)": [11, 40],
@@ -64,9 +61,9 @@ def create_data() -> dict[str, FoodType]:
     """
 
     # Load food tables
-    df = pd.read_csv(DB_PATH, dtype={"NDB_No": str})
-    df_custom = pd.read_csv(CUSTOM_DB_PATH, dtype={"NDB_No": str})
-    extra_info_df = pd.read_csv(EXTRA_INFO_PATH, dtype={"NDB_No": str})
+    df = pd.read_csv(config.DB_PATH, dtype={"NDB_No": str})
+    df_custom = pd.read_csv(config.CUSTOM_DB_PATH, dtype={"NDB_No": str})
+    extra_info_df = pd.read_csv(config.EXTRA_INFO_PATH, dtype={"NDB_No": str})
 
     # Filter data of interest from main table
     rows_of_interest = extra_info_df["NDB_No"].to_list()
@@ -121,7 +118,7 @@ def create_variables(solver, data):
             variables[food_name] = solver.NumVar(min_val, max_val, food_name)
 
         # Create binary decision variables, https://or.stackexchange.com/a/7553
-        for g in range(N_DECISION_VARS_PER_FOOD):
+        for g in range(config.N_DECISION_VARS_PER_FOOD):
             var_name = f"{food_name}_group_{g}"
             decision_variables[food_name][g] = solver.IntVar(0, 1, var_name)
 
@@ -189,7 +186,7 @@ def main():
     """ """
 
     data = create_data()
-    solver = pywraplp.Solver.CreateSolver(SOLVER_NAME)
+    solver = pywraplp.Solver.CreateSolver(config.SOLVER_NAME)
     status, solver, variables, decision_variables = solve(solver, data, CONSTRAINTS)
 
     print_variables(solver, variables)
