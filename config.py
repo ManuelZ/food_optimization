@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(frozen=True)
 class Config:
     DB_PATH: str = "data/ABBREV.csv"
     CUSTOM_DB_PATH: str = "data/custom_foods.csv"
