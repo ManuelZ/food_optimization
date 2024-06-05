@@ -134,7 +134,7 @@ class FoodOptimization:
         parameters = pywraplp.MPSolverParameters()
         status = self.solver.Solve(parameters)
 
-        return status, solver
+        return status
 
     def get_solution(self):
         """ """
