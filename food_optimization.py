@@ -125,6 +125,7 @@ class FoodOptimization:
     def solve(self):
         """ """
 
+        self.create_data()
         self.create_variables()
         self.create_constraints()
         self.create_objective()

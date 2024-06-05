@@ -24,7 +24,6 @@ def main():
         extra_info_path=config.EXTRA_INFO_PATH,
     )
 
-    optim.create_data()
     status = optim.solve()
 
     print_variables(solver, optim.variables)
