@@ -4,7 +4,7 @@ from collections import defaultdict
 def print_variables(solver, variables):
     """ """
     print("Number of variables:", solver.NumVariables())
-    print("Variables (one unit represents 100 gr of food):\n")
+    print("Variables:\n")
     for v in variables.keys():
         print(f"  - {v.capitalize()}")
     print()
