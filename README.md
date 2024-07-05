@@ -1,6 +1,6 @@
 # My customized or-tools solution for the Stigler diet problem.
 
-Linear optimization problem to find a subset of foods that meet desired ranges for calories, proteins, fats, carbohydrates, and micronutrients, while minimizing the glycemic index.
+Linear optimization problem to find a subset of foods that meet desired ranges for calories, proteins, fats, carbohydrates, and micronutrients, while minimizing the glycemic load.
 
 ## Usage
 
